@@ -29,23 +29,45 @@ var (
 	key = []byte("this_is_32_bytes_secret_key!!!!!") // 32 bytes key for AES-256 encryption
 )
 
-// initDB initializes the database connection and creates the "secrets" table if it doesn't exist.
+// initDB initializes the database connection using individual environment variables
+// (DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME).
+// It constructs the DSN, connects to PostgreSQL, and ensures that the secrets table exists.
+// The table name can be overridden via the DB_TABLE environment variable (defaults to "secrets").
 func initDB() error {
-	dsn := os.Getenv("DB_DSN")
+	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	dbName := os.Getenv("DB_NAME")
+	table := os.Getenv("DB_TABLE")
+
+	if user == "" || password == "" || host == "" || dbName == "" {
+		return fmt.Errorf("missing required DB environment variables")
+	}
+
+	if port == "" {
+		port = "5432"
+	}
+	if table == "" {
+		table = "secrets"
+	}
+
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", user, password, host, port, dbName)
+
 	var err error
 	db, err = pgxpool.New(context.Background(), dsn)
 	if err != nil {
 		return fmt.Errorf("failed to connect to DB: %w", err)
 	}
 
-	createTable := `
-	CREATE TABLE IF NOT EXISTS secrets (
+	createTable := fmt.Sprintf(`
+	CREATE TABLE IF NOT EXISTS %s (
 		id UUID PRIMARY KEY,
 		encrypted_data BYTEA NOT NULL,
 		iv BYTEA NOT NULL,
 		expires_at TIMESTAMPTZ NOT NULL,
 		viewed BOOLEAN NOT NULL DEFAULT false
-	);`
+	);`, table)
 
 	_, err = db.Exec(context.Background(), createTable)
 	if err != nil {
