@@ -45,7 +45,7 @@ func CreateSecret(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := response{URL: fmt.Sprintf("http://localhost:8080/secret/%s", id)}
+	res := response{URL: fmt.Sprintf("/secret/%s", id)}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)
 }
