@@ -15,7 +15,8 @@ import (
 
 // GetSecret handles GET /secret/{id} requests to retrieve and decrypt a secret.
 func GetSecret(w http.ResponseWriter, r *http.Request) {
-	idStr := strings.TrimPrefix(r.URL.Path, "/secret/")
+	parts := strings.Split(r.URL.Path, "/")
+	idStr := parts[len(parts)-1]
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		http.Error(w, "invalid ID", http.StatusBadRequest)
